@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  final String baseUrl = "http://localhost:8000";
+  final String baseUrl = "http://172.210.139.244:8000";
 
   Future<Map<String, dynamic>?> loginUser(
     String email,
