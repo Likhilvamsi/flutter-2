@@ -2,8 +2,7 @@ name: Build and Deploy Flutter Frontend
 
 on:
   push:
-    branches:
-      - main
+    branches: ["main"]
 
 jobs:
   build-deploy:
@@ -24,7 +23,18 @@ jobs:
       - name: Build Flutter Web
         run: flutter build web --release
 
-      - name: Deploy to VM via SCP
+      # ✅ Clean remote directory before deploying
+      - name: Clean Remote Frontend Folder
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo rm -rf ~/app/frontend/*
+
+      # ✅ Deploy build files via SCP
+      - name: Deploy to VM via SSH
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -32,9 +42,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "build/web/*"
           target: "~/app/frontend/"
-          overwrite: true     # ✅ Allow overwriting existing files
-          rm: true            # ✅ Remove old files before uploading
+          overwrite: true
+          rm: true
 
+      # ✅ Restart Nginx
       - name: Restart Nginx
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -42,6 +53,5 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            sudo rm -rf /var/www/html/*
-            sudo cp -r ~/app/frontend/* /var/www/html/
             sudo systemctl restart nginx
+
