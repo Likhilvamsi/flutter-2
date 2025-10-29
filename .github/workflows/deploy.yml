@@ -2,7 +2,8 @@ name: Build and Deploy Flutter Frontend
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
 
 jobs:
   build-deploy:
@@ -23,7 +24,7 @@ jobs:
       - name: Build Flutter Web
         run: flutter build web --release
 
-      - name: Deploy to VM via SSH
+      - name: Deploy to VM via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -31,6 +32,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "build/web/*"
           target: "~/app/frontend/"
+          overwrite: true     # ✅ Allow overwriting existing files
+          rm: true            # ✅ Remove old files before uploading
 
       - name: Restart Nginx
         uses: appleboy/ssh-action@v0.1.10
