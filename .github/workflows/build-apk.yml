@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout source code
+      # Step 1: Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -19,9 +19,9 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.7'   # ✅ supports Dart 3.8.1
+          flutter-version: '3.35.7'
 
-      # Step 3: Get dependencies
+      # Step 3: Install dependencies
       - name: Install dependencies
         run: flutter pub get
 
@@ -29,7 +29,7 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release
 
-      # Step 5: Upload artifact to GitHub (optional, for easy download)
+      # Step 5: Upload to GitHub artifacts (for CI viewing)
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -41,18 +41,17 @@ jobs:
         run: |
           curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
-      # Step 7: Create container (if not exists) & upload APK to Azure Blob
+      # Step 7: Upload APK to Azure Blob Storage (container: app)
       - name: Upload APK to Azure Blob Storage
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            # Variables
             STORAGE_ACCOUNT="appci"
-            CONTAINER_NAME="appci"
+            CONTAINER_NAME="app"
             APK_FILE="build/app/outputs/flutter-apk/app-release.apk"
             BLOB_NAME="app-release-$(date +'%Y-%m-%d_%H-%M-%S').apk"
 
-            echo "🔹 Checking and creating container if needed..."
+            echo "🔹 Ensuring container '$CONTAINER_NAME' exists..."
             az storage container create \
               --account-name $STORAGE_ACCOUNT \
               --name $CONTAINER_NAME \
@@ -60,7 +59,7 @@ jobs:
               --account-key ${{ secrets.AZURE_STORAGE_KEY }} \
               --public-access blob
 
-            echo "🔹 Uploading APK to Azure Blob Storage..."
+            echo "🔹 Uploading APK..."
             az storage blob upload \
               --account-name $STORAGE_ACCOUNT \
               --container-name $CONTAINER_NAME \
@@ -73,3 +72,4 @@ jobs:
             echo "✅ Upload completed successfully."
             echo "🌐 Public APK URL:"
             echo "https://$STORAGE_ACCOUNT.blob.core.windows.net/$CONTAINER_NAME/$BLOB_NAME"
+
