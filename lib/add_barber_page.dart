@@ -24,7 +24,7 @@ class _AddBarberPageState extends State<AddBarberPage> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => loading = true);
-    final url = Uri.parse('http://172.210.139.244:8000/barbers/add/${widget.shopId}');
+    final url = Uri.parse('http://135.237.191.7:8000/barbers/add/${widget.shopId}');
     final body = jsonEncode({
       "barber_name": _barberNameController.text.trim(),
       "start_time": _startTimeController.text.trim(),
