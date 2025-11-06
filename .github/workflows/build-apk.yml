@@ -1,4 +1,4 @@
-name: Build Flutter APK
+name: Build and Upload Flutter APK to Azure Blob
 
 on:
   push:
@@ -12,12 +12,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.0'   # You can adjust version
+          flutter-version: '3.22.0'
 
       - name: Install dependencies
         run: flutter pub get
@@ -26,7 +26,20 @@ jobs:
         run: flutter build apk --release
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      # 🔹 Upload built APK to Azure Blob Storage
+      - name: Upload APK to Azure Blob Storage
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az storage blob upload \
+              --account-name appci \
+              --container-name appci \
+              --name app-release.apk \
+              --file build/app/outputs/flutter-apk/app-release.apk \
+              --auth-mode key \
+              --account-key ${{ secrets.AZURE_STORAGE_KEY }}
