@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <!-- Explicitly allow your backend IP -->
     <domain-config cleartextTrafficPermitted="true">
-        <!-- Allow only this domain/IP for HTTP -->
-        <domain includeSubdomains="false">135.237.191.7</domain>
+        <domain includeSubdomains="true">135.237.191.7</domain>
     </domain-config>
+
+    <!-- Optional: fallback rule (useful if backend changes IP) -->
+    <base-config cleartextTrafficPermitted="true" />
 </network-security-config>
