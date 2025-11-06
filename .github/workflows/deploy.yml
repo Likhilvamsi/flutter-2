@@ -1,40 +1,44 @@
-name: Build and Deploy Flutter Frontend
+name: Build and Deploy Flutter (Web + APK)
 
 on:
   push:
     branches: ["main"]
 
 jobs:
-  build-deploy:
+  # =====================================
+  # 🌐 BUILD & DEPLOY WEB FRONTEND
+  # =====================================
+  build-deploy-web:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: 🧾 Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
+      - name: 🛠️ Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.35.7"
 
-      - name: Install Dependencies
+      - name: 📦 Install Dependencies
         run: flutter pub get
 
-      - name: Build Flutter Web
+      - name: 🌐 Build Flutter Web
         run: flutter build web --release
 
-      # ✅ Clean remote directory before deploying
-      - name: Clean Remote Frontend Folder
+      # 🧹 Clean old frontend files
+      - name: 🧹 Clean Remote Frontend Folder
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            echo "🧹 Cleaning old frontend files..."
             sudo rm -rf ~/app/frontend/*
 
-      # ✅ Deploy build files via SCP
-      - name: Deploy to VM via SSH
+      # 📤 Upload new frontend build
+      - name: 🚀 Deploy Web Files to Azure VM
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -43,14 +47,71 @@ jobs:
           source: "build/web/*"
           target: "~/app/frontend/"
           overwrite: true
-          rm: true
 
-      # ✅ Restart Nginx
-      - name: Restart Nginx
+      # 🔄 Restart Nginx
+      - name: 🔁 Restart Nginx
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            echo "🔄 Restarting Nginx..."
             sudo systemctl restart nginx
+            echo "✅ Web app deployed successfully!"
+
+  # =====================================
+  # 📱 BUILD & UPLOAD ANDROID APK
+  # =====================================
+  build-apk:
+    runs-on: ubuntu-latest
+    needs: build-deploy-web  # wait until web deploy completes
+
+    steps:
+      - name: 🧾 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.35.7"
+
+      - name: 📦 Install Dependencies
+        run: flutter pub get
+
+      - name: 🤖 Build Android APK
+        run: flutter build apk --release
+
+      # ✅ Upload APK to Azure Blob Storage
+      - name: ☁️ Upload APK to Azure Blob Storage
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            echo "☁️ Uploading APK to Azure Blob Storage..."
+
+            # Ensure container exists
+            az storage container create \
+              --account-name appci \
+              --name app \
+              --auth-mode key \
+              --account-key ${{ secrets.AZURE_STORAGE_KEY }}
+
+            # Upload the new APK
+            TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
+            FILE_NAME="app-release-${TIMESTAMP}.apk"
+
+            az storage blob upload \
+              --account-name appci \
+              --container-name app \
+              --name $FILE_NAME \
+              --file build/app/outputs/flutter-apk/app-release.apk \
+              --auth-mode key \
+              --account-key ${{ secrets.AZURE_STORAGE_KEY }}
+
+            # Generate download URL
+            URL="https://appci.blob.core.windows.net/app/${FILE_NAME}"
+            echo "✅ APK uploaded successfully: ${URL}"
+            echo "DOWNLOAD_URL=${URL}" >> $GITHUB_ENV
+
+      - name: ✅ Print APK Download URL
+        run: echo "📱 New APK available at ${{ env.DOWNLOAD_URL }}"
