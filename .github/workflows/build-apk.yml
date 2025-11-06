@@ -17,7 +17,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.0'
+          flutter-version: '3.35.7'   # ✅ Supports Dart 3.8.1+
 
       - name: Install dependencies
         run: flutter pub get
@@ -31,7 +31,10 @@ jobs:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      # 🔹 Upload built APK to Azure Blob Storage
+      - name: Install Azure CLI
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
       - name: Upload APK to Azure Blob Storage
         uses: azure/CLI@v2
         with:
