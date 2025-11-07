@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // 🧠 Base URL: use HTTPS when backend is SSL enabled (for now HTTP)
- final String baseUrl = "https://135.237.191.7.nip.io";
+  // 🧠 Base URL (use HTTPS in production)
+  final String baseUrl = "https://135.237.191.7.nip.io";
 
   // 🧾 User Login
   Future<Map<String, dynamic>?> loginUser(
@@ -14,17 +14,28 @@ class ApiService {
     final Uri url = Uri.parse('$baseUrl/users/login');
 
     try {
+      print("🌐 Sending POST request to: $url");
+      print("📦 Body: ${jsonEncode({
+        "email": email,
+        "password": password,
+        "role": role.toLowerCase(), // Ensure lowercase
+      })}");
+
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "email": email,
           "password": password,
-          "role": role,
+          "role": role.toLowerCase(),
         }),
       );
 
+      print("📩 Response status: ${response.statusCode}");
+      print("📩 Response body: ${response.body}");
+
       if (response.statusCode == 200) {
+        print("✅ Login successful!");
         return jsonDecode(response.body);
       } else {
         print("❌ Login failed: ${response.statusCode} ${response.body}");
@@ -40,7 +51,10 @@ class ApiService {
   Future<List<dynamic>> getShopsByOwner(int ownerId) async {
     final Uri url = Uri.parse('$baseUrl/owner/$ownerId');
     try {
+      print("🌐 GET $url");
       final response = await http.get(url);
+      print("📩 Status: ${response.statusCode}");
+
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -64,6 +78,7 @@ class ApiService {
   }) async {
     final Uri url = Uri.parse('$baseUrl/create?owner_id=$ownerId');
     try {
+      print("🌐 POST $url");
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
@@ -76,6 +91,7 @@ class ApiService {
           "close_time": closeTime,
         }),
       );
+      print("📩 Status: ${response.statusCode}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         print("✅ Shop created successfully");
@@ -94,7 +110,10 @@ class ApiService {
   Future<List<dynamic>> getBarbersByShop(int shopId) async {
     final Uri url = Uri.parse('$baseUrl/barbers/available/$shopId');
     try {
+      print("🌐 GET $url");
       final response = await http.get(url);
+      print("📩 Status: ${response.statusCode}");
+
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -123,6 +142,7 @@ class ApiService {
         body: jsonEncode(body),
       );
 
+      print("📩 Status: ${response.statusCode}");
       if (response.statusCode == 200) {
         print("✅ Barber updated successfully");
       } else {
@@ -140,7 +160,10 @@ class ApiService {
     final Uri url = Uri.parse('$baseUrl/barbers/delete/$barberId?owner_id=$ownerId');
 
     try {
+      print("🗑️ DELETE $url");
       final response = await http.delete(url);
+      print("📩 Status: ${response.statusCode}");
+
       if (response.statusCode == 200) {
         print("✅ Barber deleted successfully");
       } else {
@@ -157,7 +180,10 @@ class ApiService {
   Future<List<dynamic>> getAllShops() async {
     final Uri url = Uri.parse('$baseUrl/shops');
     try {
+      print("🌐 GET $url");
       final response = await http.get(url);
+      print("📩 Status: ${response.statusCode}");
+
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -173,10 +199,13 @@ class ApiService {
   Future<List<dynamic>> getSlots(int shopId, String date) async {
     final Uri url = Uri.parse('$baseUrl/shops/$shopId/slots/?date=$date');
     try {
+      print("🌐 GET $url");
       final response = await http.get(
         url,
         headers: {'accept': 'application/json'},
       );
+      print("📩 Status: ${response.statusCode}");
+
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -192,11 +221,17 @@ class ApiService {
   Future<bool> bookSlots(Map<String, dynamic> body) async {
     final Uri url = Uri.parse('$baseUrl/shops/book-slots/');
     try {
+      print("🌐 POST $url");
+      print("📦 Body: $body");
+
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
+
+      print("📩 Status: ${response.statusCode}");
+      print("📩 Body: ${response.body}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         print("✅ Booking successful");
