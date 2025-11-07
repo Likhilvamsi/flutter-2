@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'services/auth_service.dart';
+import 'services/api_service.dart';
 import 'owner_page.dart';
 import 'customer_page.dart';
 
@@ -16,7 +16,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   String role = "owner";
   bool isLoading = false;
-  final AuthService authService = AuthService();
+  final ApiService apiService = ApiService();
 
   // Validation error messages
   String? emailError;
@@ -56,33 +56,39 @@ class _LoginPageState extends State<LoginPage> {
     // Proceed if validation passes
     setState(() => isLoading = true);
 
-    final result = await authService.loginUser(
-      email,
-      password,
-      role,
-    );
+    try {
+      print("🔹 Sending login request...");
+      final result = await apiService.loginUser(email, password, role);
+      print("🔸 API Response: $result");
 
-    setState(() => isLoading = false);
+      setState(() => isLoading = false);
 
-    if (result['success'] == true) {
-      final data = result['data'];
-      final userId = data['user_id'];
-      final userRole = data['role'];
+      if (result != null && result.containsKey('success') && result['success'] == true) {
+        final data = result['data'];
+        final userId = data['user_id'];
+        final userRole = data['role'];
 
-      if (userRole == 'owner') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => OwnerPage(ownerId: userId)),
-        );
+        if (userRole == 'owner') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => OwnerPage(ownerId: userId)),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => CustomerPage(customerId: userId)),
+          );
+        }
       } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => CustomerPage(customerId: userId)),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result?['message'] ?? "Invalid credentials")),
         );
       }
-    } else {
+    } catch (e) {
+      print("⚠️ Login Exception: $e");
+      setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['message'] ?? "Login failed")),
+        const SnackBar(content: Text("Error connecting to server")),
       );
     }
   }
@@ -105,8 +111,7 @@ class _LoginPageState extends State<LoginPage> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 width: 330,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -159,29 +164,19 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.person_outline,
-                              color: Colors.white70, size: 20),
+                          const Icon(Icons.person_outline, color: Colors.white70, size: 20),
                           const SizedBox(width: 10),
                           Expanded(
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: role,
                                 isExpanded: true,
-                                icon: const Icon(Icons.arrow_drop_down,
-                                    color: Colors.white70),
+                                icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
                                 dropdownColor: Colors.grey[850],
                                 style: const TextStyle(color: Colors.white),
                                 items: const [
-                                  DropdownMenuItem(
-                                    value: "owner",
-                                    child: Text("Owner",
-                                        style: TextStyle(color: Colors.white)),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: "customer",
-                                    child: Text("Customer",
-                                        style: TextStyle(color: Colors.white)),
-                                  ),
+                                  DropdownMenuItem(value: "owner", child: Text("Owner")),
+                                  DropdownMenuItem(value: "customer", child: Text("Customer")),
                                 ],
                                 onChanged: (val) => setState(() => role = val!),
                               ),
@@ -222,10 +217,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           child: isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                )
+                              ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
                               : const Text(
                                   "Login",
                                   style: TextStyle(
@@ -267,8 +259,7 @@ class _LoginPageState extends State<LoginPage> {
             labelStyle: const TextStyle(color: Colors.white70, fontSize: 14),
             filled: true,
             fillColor: Colors.white.withOpacity(0.1),
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: const BorderSide(color: Colors.white30),
