@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  final String baseUrl = "http://135.237.191.7:8000"; // Your backend base URL
+ final String baseUrl = "https://135.237.191.7.nip.io"; // Your backend base URL
 
   // 🔸 Login function
   Future<Map<String, dynamic>> loginUser(
