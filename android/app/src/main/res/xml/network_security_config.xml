@@ -2,7 +2,7 @@
 <network-security-config>
     <!-- Allow HTTP to specific IP -->
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">135.237.191.7</domain>
+        <domain includeSubdomains="true">135.237.191.7.nip.io</domain>
     </domain-config>
 
     <!-- Fallback: allow all cleartext temporarily -->
