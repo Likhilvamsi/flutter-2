@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // 🧠 Base URL: use HTTPS when backend is SSL enabled (for now HTTP)
-  final String baseUrl = "http://135.237.191.7:8000";
+ final String baseUrl = "https://135.237.191.7.nip.io";
 
   // 🧾 User Login
   Future<Map<String, dynamic>?> loginUser(
